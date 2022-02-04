@@ -54,11 +54,11 @@ app.post('/register', async (req, res) => {
         try {
             const savedUser = await user.save();
             res.send({ user: savedUser });
-            console.log('user registered!')
+            res.status(200);
         } catch (e) {
             res.status(400).send(e);
             console.log(e);
-            console.log('data not sent')
+            console.log('data not sent');
         }
     }
 
@@ -92,7 +92,7 @@ app.post('/login', async (req, res) => {
         res.json({ auth: false, message: "User doesn't exist" });
     }
 
-    console.log('user logged in!')
+    return res.status(200);
 })
 
 //middleware to check the jwt token created
@@ -111,7 +111,7 @@ const verifyJwt = (req, res, next) => {
     });
 }
 
-app.get('/authenticated', verifyJwt, (req, res) => {
+app.get('/users', verifyJwt, (req, res) => {
     res.send('You are authenticated');
 })
 
