@@ -1,3 +1,4 @@
+/* eslint-disable no-unused-vars */
 const express = require('express');
 const cors = require('cors');
 const bcrypt = require('bcrypt');
@@ -21,7 +22,10 @@ mongoose
 
 const app = express();
 
-app.use(cors());
+app.use(cors({
+    origin: 'http://localhost:3000',
+    credentials: true,
+}));
 app.use(express.json());
 
 app.post('/register', async (req, res) => {
@@ -65,54 +69,52 @@ app.post('/register', async (req, res) => {
 })
 
 app.post('/login', async (req, res) => {
-    const username = req.body.username;
-    const password = req.body.password;
+    const { username, password } = req.body;
 
-    //user exist
+    //check if user exist
     const usernameExist = await User.findOne({ username: username });
     if (!usernameExist) {
-        res.json({ auth: false, message: "Incorrect username" });
-        return res.status(400);
+        return res.status(400).json({ message: "Incorrect username" });
     }
 
-    //Password is correct
+    //Check if Password is correct
     const validPass = await bcrypt.compare(password, usernameExist.password);
     if (!validPass) {
-        res.json({ auth: false, message: "Incorrect password" });
-        return res.status(400);
+        return res.status(400).json({ message: "Incorrect password" });
     }
 
-    if (usernameExist) {
-        //Create and assign a token
-        const token = jwt.sign({ _id: usernameExist._id }, process.env.TOKEN_SECRET, {
-            expiresIn: 300,
-        });
-        res.json({ auth: true, token: token, user: usernameExist });
-    } else {
-        res.json({ auth: false, message: "User doesn't exist" });
-    }
 
-    return res.status(200);
+    //Create and assign a token
+    const token = jwt.sign({ _id: usernameExist._id }, process.env.TOKEN_SECRET, {
+        expiresIn: 300,
+    });
+
+    return res.status(200).json({ token: token, user: usernameExist });;
 })
 
-//middleware to check the jwt token created
-const verifyJwt = (req, res, next) => {
-    const token = req.headers["x-access-token"];
+//middleware to check the jwt token on headers
+const verifyToken = (req, res, next) => {
+    //the "authorization" has to be in lower case to find it, and the "bearer" needs to be excluded to be verified
+    const token = req.headers["authorization"].replace('Bearer ', '');
 
     if (!token) {
-        res.send("We need a token to check if you are authorized")
+        res.status(401);
+        console.log('Unauthorized');
     }
 
+    //authenticate token
     jwt.verify(token, process.env.TOKEN_SECRET, (err, decoded) => {
-        if (err) res.json({ auth: false, message: "You failed to authenticate" });
+        if (err) {
+            res.status(403).json({ message: "Invalid token" });
+        }
 
         req.userId = decoded._id;
         next();
     });
 }
 
-app.get('/users', verifyJwt, (req, res) => {
-    res.send('You are authenticated');
+app.get('/users', verifyToken, (req, res) => {
+    res.status(200).send('You are authenticated');
 })
 
 

@@ -1,12 +1,10 @@
 import { createSlice } from '@reduxjs/toolkit';
 
-
 export const userSlice = createSlice({
     name: 'user',
     initialState: {
         user: "",
         usersInDataBase: [],
-        token: "",
     },
     reducers: {
         userLoggedIn: (state, action) => {
@@ -17,13 +15,8 @@ export const userSlice = createSlice({
             state.usersInDataBase.push(action.payload);
         },
 
-        userToken: (state, action) => {
-            state.token = action.payload;
-        },
-
         userLogout: (state) => {
             state.user = "";
-            state.token = "";
         }
     }
 });

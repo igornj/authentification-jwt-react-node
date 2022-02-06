@@ -1,10 +1,9 @@
-/* eslint-disable no-unused-vars */
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import axios from 'axios';
 import { useDispatch } from 'react-redux';
-import { userLoggedIn, userToken } from '../features/users/userSlice';
+import { userLoggedIn } from '../features/users/userSlice';
 
 function Login() {
     const [username, setUsername] = useState("");
@@ -14,42 +13,38 @@ function Login() {
     const navigate = useNavigate();
 
 
-
-    const handleLogin = () => {
+    const handleLogin = async () => {
 
         if (username === '' || password === '') {
             toast.error("Os campos não podem estar vazios");
             return;
         }
 
-        axios.post('http://localhost:3001/login', {
+        await axios.post('http://localhost:3001/login', {
             username: username,
             password: password,
-        })
+        }, { withCredentials: true })
             .then((response) => {
-                //grab and save the token created/verified
-                localStorage.setItem('token', response.data.token);
-                dispatch(userToken(response.data.token));
                 dispatch(userLoggedIn({ username: username, password: password }));
-                toast.success("Login efetuado com sucesso");
+                axios.defaults.headers.common['Authorization'] = `Bearer ${response.data['token']}`;
                 navigate('/users');
             })
             .catch(error => {
-                console.log(error)
+                toast.error('Ocorreu um erro ao tentar fazer login');
             });
     }
 
 
-    //grab the jwt saved in the localstorage and send again to headers
-    const isUserAuthenticated = () => {
-        axios.get('http://localhost:3001/authenticated', {
-            headers: {
-                'x-access-token': localStorage.getItem('token'),
-            },
-        }).then((response) => {
-            console.log(response);
-        });
-    };
+    // //grab the jwt saved in the localstorage and send to headers
+    // const isUserAuthenticated = () => {
+    //     axios.get('http://localhost:3001/users', {
+    //         headers: {
+    //             'x-access-token': localStorage.getItem('token'),
+    //         },
+    //     }).then((response) => {
+    //         console.log(response);
+    //     });
+    // };
 
     return (
         <div style={{ display: "flex", flexDirection: "column", justifyContent: 'center', alignItems: 'center', rowGap: "0.8rem", marginTop: "4rem" }}>
